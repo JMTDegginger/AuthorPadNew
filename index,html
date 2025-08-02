@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author Pad - Writing Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::before {
+            content: "✍️";
+            font-size: 1.2rem;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .toolbar button {
+            background: none;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            color: #4a5568;
+        }
+
+        .toolbar button:hover {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .toolbar button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-number {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #4a5568;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .editor-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+            border: none;
+            background: none;
+            width: 100%;
+            padding: 0.5rem 0;
+        }
+
+        .project-title:focus {
+            outline: none;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .editor {
+            flex: 1;
+            padding: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #2d3748;
+            border: none;
+            outline: none;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: transparent;
+            min-height: 500px;
+            overflow-y: auto;
+        }
+
+        .editor:focus {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .editor:empty:before {
+            content: attr(data-placeholder);
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .goal-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .goal-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .goal-input input {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 80px;
+        }
+
+        .goal-input label {
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .session-timer {
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .timer-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .timer-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .achievements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .achievement {
+            background: linear-gradient(135deg, #ffd89b, #19547b);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .format-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem;
+            z-index: 1000;
+            display: none;
+        }
+
+        .format-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+        }
+
+        .format-menu button:hover {
+            background: #f7fafc;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .toolbar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Author Pad</div>
+        <div class="toolbar">
+            <button onclick="formatText('bold')">Bold</button>
+            <button onclick="formatText('italic')">Italic</button>
+            <button onclick="formatText('underline')">Underline</button>
+            <button onclick="insertScene()">New Scene</button>
+            <button onclick="exportText()">Export</button>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="wordCount">0</div>
+                <div>Words</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="charCount">0</div>
+                <div>Characters</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pageCount">0</div>
+                <div>Pages</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="editor-container">
+            <div class="editor-header">
+                <input type="text" class="project-title" placeholder="Untitled Project" id="projectTitle">
+            </div>
+            <div class="editor" id="mainEditor" contenteditable="true" data-placeholder="Begin your story here...
+
+Remember: Every great story starts with a single word. What's yours?"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-panel">
+                <div class="panel-title">📊 Today's Goal</div>
+                <div class="goal-section">
+                    <div class="goal-input">
+                        <input type="number" id="dailyGoal" value="1000" min="100" max="10000">
+                        <label>words today</label>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="goalProgress" style="width: 0%"></div>
+                    </div>
+                    <div id="goalText">0 / 1000 words (0%)</div>
+                </div>
+            </div>
+
+            <div class="sidebar-panel">
+                <div class="session-timer">
+                    <div class="timer-display" id="timerDisplay">00:00</div>
+                    <div class="timer-controls">
+                        <button class="timer-btn" onclick="startTimer()">Start</button>
+                        <button class="timer-btn" onclick="pauseTimer()">Pause</button>
+                        <button class="timer-btn" onclick="resetTimer()">Reset</button>
+                    </div>
+                </div>
+                <div class="panel-title">📈 Session Stats</div>
+                <div>Words this session: <strong id="sessionWords">0</strong></div>
+                <div>WPM: <strong id="wpmDisplay">0</strong></div>
+            </div>
+
+            <div class="sidebar-panel">
+                <div class="panel-title">🏆 Achievements</div>
+                <div class="achievements" id="achievementsList">
+                    <div class="achievement">🎯 First Words</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let state = {
+            wordCount: 0,
+            sessionStartWords: 0,
+            dailyWords: 0,
+            timerRunning: false,
+            timerSeconds: 0,
+            timerInterval: null,
+            sessionStartTime: null,
+            achievements: ['🎯 First Words']
+        };
+
+        // DOM elements
+        const editor = document.getElementById('mainEditor');
+        const wordCountEl = document.getElementById('wordCount');
+        const charCountEl = document.getElementById('charCount');
+        const pageCountEl = document.getElementById('pageCount');
+        const dailyGoalEl = document.getElementById('dailyGoal');
+        const goalProgressEl = document.getElementById('goalProgress');
+        const goalTextEl = document.getElementById('goalText');
+        const timerDisplayEl = document.getElementById('timerDisplay');
+        const sessionWordsEl = document.getElementById('sessionWords');
+        const wpmDisplayEl = document.getElementById('wpmDisplay');
+        const achievementsEl = document.getElementById('achievementsList');
+
+        // Text analysis functions
+        function countWords(text) {
+            if (!text.trim()) return 0;
+            return text.trim().replace(/<[^>]*>/g, '').split(/\s+/).length;
+        }
+
+        function updateStats() {
+            const text = editor.textContent || editor.innerText || '';
+            const words = countWords(text);
+            const chars = text.length;
+            const pages = Math.ceil(words / 250); // Standard manuscript page
+
+            state.wordCount = words;
+            wordCountEl.textContent = words.toLocaleString();
+            charCountEl.textContent = chars.toLocaleString();
+            pageCountEl.textContent = pages;
+
+            updateGoalProgress();
+            updateSessionStats();
+            checkAchievements(words);
+        }
+
+        function updateGoalProgress() {
+            const goal = parseInt(dailyGoalEl.value);
+            const progress = Math.min((state.wordCount / goal) * 100, 100);
+            
+            goalProgressEl.style.width = progress + '%';
+            goalTextEl.textContent = `${state.wordCount} / ${goal} words (${Math.round(progress)}%)`;
+        }
+
+        function updateSessionStats() {
+            const sessionWords = state.wordCount - state.sessionStartWords;
+            sessionWordsEl.textContent = sessionWords;
+
+            if (state.timerRunning && state.timerSeconds > 0) {
+                const minutes = state.timerSeconds / 60;
+                const wpm = Math.round(sessionWords / minutes);
+                wpmDisplayEl.textContent = wpm || 0;
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (!state.timerRunning) {
+                state.timerRunning = true;
+                state.sessionStartWords = state.wordCount;
+                state.sessionStartTime = Date.now();
+                
+                state.timerInterval = setInterval(() => {
+                    state.timerSeconds++;
+                    updateTimerDisplay();
+                    updateSessionStats();
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            state.timerRunning = false;
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            state.timerSeconds = 0;
+            state.sessionStartWords = state.wordCount;
+            updateTimerDisplay();
+            updateSessionStats();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(state.timerSeconds / 60);
+            const seconds = state.timerSeconds % 60;
+            timerDisplayEl.textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Achievement system
+        function checkAchievements(wordCount) {
+            const achievements = [];
+            
+            if (wordCount >= 1 && !state.achievements.includes('🎯 First Words')) {
+                achievements.push('🎯 First Words');
+            }
+            if (wordCount >= 100 && !state.achievements.includes('💯 Century')) {
+                achievements.push('💯 Century');
+            }
+            if (wordCount >= 500 && !state.achievements.includes('🏃 Sprint')) {
+                achievements.push('🏃 Sprint');
+            }
+            if (wordCount >= 1000 && !state.achievements.includes('🎯 Daily Goal')) {
+                achievements.push('🎯 Daily Goal');
+            }
+            if (wordCount >= 2500 && !state.achievements.includes('🚀 Prolific')) {
+                achievements.push('🚀 Prolific');
+            }
+            if (wordCount >= 5000 && !state.achievements.includes('📚 Chapter')) {
+                achievements.push('📚 Chapter');
+            }
+
+            achievements.forEach(achievement => {
+                if (!state.achievements.includes(achievement)) {
+                    state.achievements.push(achievement);
+                    showAchievementNotification(achievement);
+                }
+            });
+
+            updateAchievementsDisplay();
+        }
+
+        function updateAchievementsDisplay() {
+            achievementsEl.innerHTML = state.achievements
+                .map(achievement => `<div class="achievement">${achievement}</div>`)
+                .join('');
+        }
+
+        function showAchievementNotification(achievement) {
+            // Create a simple notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = `Achievement unlocked: ${achievement}`;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Formatting functions
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            updateToolbarState();
+            editor.focus();
+        }
+
+        function updateToolbarState() {
+            // Update button states based on current selection
+            const buttons = document.querySelectorAll('.toolbar button');
+            
+            buttons.forEach(button => {
+                const command = button.textContent.toLowerCase();
+                if (['bold', 'italic', 'underline'].includes(command)) {
+                    const isActive = document.queryCommandState(command);
+                    button.classList.toggle('active', isActive);
+                }
+            });
+        }
+
+        function insertScene() {
+            const sceneBreak = '\n\n* * *\n\n';
+            const cursorPos = editor.selectionStart;
+            const textBefore = editor.value.substring(0, cursorPos);
+            const textAfter = editor.value.substring(cursorPos);
+            
+            editor.value = textBefore + sceneBreak + textAfter;
+            editor.focus();
+            editor.setSelectionRange(cursorPos + sceneBreak.length, cursorPos + sceneBreak.length);
+            updateStats();
+        }
+
+        function exportText() {
+            const title = document.getElementById('projectTitle').value || 'Untitled';
+            const content = editor.value;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        editor.addEventListener('input', updateStats);
+        editor.addEventListener('keyup', updateToolbarState);
+        editor.addEventListener('mouseup', updateToolbarState);
+        editor.addEventListener('focus', updateToolbarState);
+        dailyGoalEl.addEventListener('change', updateGoalProgress);
+
+        // Auto-save functionality (using variables since localStorage isn't available)
+        let autoSaveData = {
+            content: '',
+            title: '',
+            wordCount: 0
+        };
+
+        function autoSave() {
+            autoSaveData.content = editor.innerHTML;
+            autoSaveData.title = document.getElementById('projectTitle').value;
+            autoSaveData.wordCount = state.wordCount;
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(autoSave, 30000);
+
+        // Save on window unload
+        window.addEventListener('beforeunload', autoSave);
+
+        // Add CSS animation for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        updateStats();
+        updateAchievementsDisplay();
+    </script>
+</body>
+</html>
